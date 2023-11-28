@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>202055513 김대영</title>
+  <!-- 202055513 김대영 인웹기 프로젝트입니다 -->
+  <!-- 사용한 API : Googlemap API, 부산광역시 먹는물 공동시설 수질 정보 조회 (2015이후) API-->
+  <!-- 총 CSS selector 갯수 : 16개 -->
+  <!-- 동적 기능(3가지) : 조사할 위치(구)입력, 수질 상세정보 버튼, 조사년도 버튼 -->
+  <!-- 부적절한 입력 오류(2가지) : 아무것도 입력 안했을 때, 올바르지 않은 값을 입력했을때 -->
+  <script type="text/javascript" src="./js/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <!-- 16개의 스타일 지정 -->
+  <style> 
+    body{
+      margin: 1px;
+    }
+
+    .input-group{
+      width: auto;
+    }
+
+    input{
+      width: 200px;
+      height: 25px
+    }
+
+    .btn{
+      width: auto;
+      height: 25px;
+    }
+
+    .list-group{
+      background-color: azure;
+    }
+
+    .map{
+      border-color: gray;
+      border-style: solid;
+      float: left;
+    }
+
+    select{
+      margin: 50px;
+      width: 300px;
+      height: 40;
+      text-align: center;
+      float: left;
+    }
+
+    option.none{
+      margin: 5px;
+      background-color: aliceblue;
+    }
+
+    option.inable{
+      margin: 5px;
+      background-color: indianred;
+    }
+
+    option.able{
+      margin: 5px;
+      background-color: lightblue;
+    }
+
+    option.Able{
+      margin: 5px;
+      background-color: aqua;
+    }
+
+    li.nok{
+      background-color: red;
+      width:300px;
+      height: 40;
+      text-align: center;
+      list-style: none;
+      margin: 1px;
+    }
+
+    li.ok{
+      background-color: greenyellow;
+      width:300px;
+      height: 40;
+      text-align: center; 
+      list-style: none;
+      margin: 1px;
+    }
+
+    li.non{
+      background-color: azure;
+      width:300px;
+      height: 40;
+      text-align: center;
+      list-style: none;
+      margin: 1px;
+    }
+
+    .li-btn1{
+      background-color: beige;
+      width: 300px;
+      height: 20;
+      text-align: center;
+      border-color: black;
+      border-style: solid;
+      margin: 1px;
+    }
+
+    .li-btn2{
+      background-color: antiquewhite;
+      width: 300px;
+      height: 20;
+      text-align: center;
+      border-color: black;
+      border-style: solid;
+      margin: 1px;
+    }
+  </style>
+</head>
+
+<!-- 본문 시작 -->
+<body>
+  <h1>약수터 수질 확인</h1>
+  <div style="width: 500px; float: left;">
+    <div class="input-group">
+      <input type="text" placeholder="ex) 해운대구" id="location">
+      <button class="btn" type="button" id="button" onclick="displayResponse()">위치(구) 입력</button>
+    </div>
+    <!-- 입력창 & 버튼 -->
+    <div class="list-group" style="overflow: auto; height:100vh;" id="list"></div>
+    <!-- 출력 리스트 -->
+  </div>
+  <!-- 입력 그룹 -->
+  <div id="map" class="map" style="width:500px; height: 100vh;"></div>
+  <!-- 지도 -->
+  <div class="select-box">
+    <select>
+      <option class="none">입력 가능 지역</option>
+      <option class="inable">중구</option>
+      <option class="able">동구</option>
+      <option class="able">서구</option>
+      <option class="able">영도구</option>
+      <option class="able">부산진구</option>
+      <option class="able">동래구</option>
+      <option class="able">남구</option>
+      <option class="able">북구</option>
+      <option class="able">강서구</option>
+      <option class="able">해운대구</option>
+      <option class="able">사하구</option>
+      <option class="able">금정구</option>
+      <option class="able">연제구</option>
+      <option class="able">수영구</option>
+      <option class="able">사상구</option>
+      <option class="Able">기장군</option>
+    </select>
+  </div>
+  <!-- 입력 가능한 값을 알려주는 셀렉트 박스 (불가능한 지역은 빨간색으로 표시)-->
+
+  <!-- 동작 과정을 넣은 스크립트 시작 -->
+  <script>
+    var map;
+
+    function initMap(){
+      var busan = { lat: 35.17944, lng: 129.07556};
+
+      map = new google.maps.Map(
+        document.getElementById('map'), {
+          zoom: 11,
+          center: busan
+      });
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.withCredentials = true;
+
+    xhr.addEventListener("readystatechange", function () {
+      if (this.readyState === 4) {
+        var data = JSON.parse(this.responseText);
+        var jsonData = data.getDrinkableWaterQualityInfoAfter2015.item;
+
+        for (var i = 0; i < jsonData.length; ++i) {
+          var temp = document.createElement("ul");
+          temp.setAttribute("style", "padding:0; margin:0;");
+
+          var color = "";
+          if(jsonData[i].result=="부적합") color = 'nok';
+          else if(jsonData[i].result=="적합") color = 'ok';
+          else color = 'non';
+          
+          temp.innerHTML = "<li class='" + color + "' style = 'float: left;'>" + jsonData[i].inspecPoint + " </li>";
+          temp.innerHTML += "<li class='" + color + "'>" + "<button type='button' class='li-btn1' style = 'float: left;' id='moreinfoBtn"+i+"'>수질정보</button></li>";
+          temp.innerHTML += "<li class='" + color + "'>" + "<button type='button' class='li-btn2' style = 'float: left;' id='Yy"+i+"'>측정년도</button></li>";
+          document.getElementById('list').appendChild(temp);
+
+          var moreinfoBtn = document.getElementById('moreinfoBtn'+i);
+          moreinfoBtn.addEventListener('click', getMoreInfo);
+          var YyBtn = document.getElementById('Yy'+i);
+          YyBtn.addEventListener('click', getYearInfo);          
+        }
+      }
+
+      function getMoreInfo(){
+        var index = $(this).parent().index();
+        window.alert("측정지점: " + jsonData[index].inspecArea + " " + jsonData[index].inspecPoint
+        +"\n결과: " + jsonData[index].result
+        +"\n일반세균: " + jsonData[index].water01
+        +"\n총대장장균: " + jsonData[index].water02
+        +"\n분원성대장균군 또는 대장균: " + jsonData[index].water03
+        +"\n암모니아성질소: " + jsonData[index].water04
+        +"\n질산성질소: " + jsonData[index].water05
+        +"\n과망간산칼륨소비량: " + jsonData[index].water06);
+      }
+
+      function getYearInfo(){
+        var index = $(this).parent().index();
+        window.alert("측정시점: " + jsonData[index].inspecYy + "년 " + jsonData[index].inspecQt + "분기")
+      }
+    });
+
+    function displayResponse() {
+      var url = "http://localhost:3000/water"
+
+      var inspecArea = document.getElementById('location').value;
+
+      if (inspecArea == ""){
+        alert("지역을 선택해주세요.")
+        return;
+      }
+
+      else if (inspecArea == "동구"){
+        map.panTo({lat: 35.135894, lng: 129.059175});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "서구"){
+        map.panTo({lat: 35.0948361, lng: 129.0263777});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "영도구"){
+        map.panTo({lat: 35.088116, lng: 129.070186});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "부산진구"){
+        map.panTo({lat: 35.1599527, lng: 129.055319});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "동래구"){
+        map.panTo({lat: 35.2018722, lng: 129.085855});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "남구"){
+        map.panTo({lat: 35.133408, lng: 129.0865});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "북구"){
+        map.panTo({lat: 35.1941805, lng: 128.992474});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "강서구"){
+        map.panTo({lat: 35.2091638, lng: 128.9829083});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "해운대구"){
+        map.panTo({lat: 35.16001944, lng: 129.1658083});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "사하구"){
+        map.panTo({lat: 35.1014277, lng: 128.9770416});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "금정구"){
+        map.panTo({lat: 35.240077, lng: 129.0943194});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "연제구"){
+        map.panTo({lat: 35.1731861, lng: 129.082075});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "수영구"){
+        map.panTo({lat: 35.142466, lng: 129.115375});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "사상구"){
+        map.panTo({lat: 35.1494666, lng: 128.993333});
+        map.setZoom(15);
+      }
+
+      else if (inspecArea == "기장군"){
+        map.panTo({lat: 35.241350, lng: 129.224475});
+        map.setZoom(15);
+      }
+
+      else {
+        alert("올바른 지명을 입력해주세요.")
+        return;
+      }
+
+      url = url + "?" + "inspecArea=" + inspecArea
+      
+      xhr.open("GET", url);
+      xhr.send();
+    }
+  </script>
+  <!-- 동작 과정을 넣은 스크립트 끝 -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAymPslj6q9BslJXHoIwpEZr0bBQ9UA0os&callback=initMap&region=kr"></script>
+  <!-- 구글맵 API -->
+</body>
+<!-- 본문 끝 -->
+</html>
